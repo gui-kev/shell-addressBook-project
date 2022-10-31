@@ -1,1 +1,34 @@
 # shell-addressBook-project
+
+## Exercises : Addressbook
+Create an addressbook program using the bourne or bourne-again shell.
+It should use functions to perform the required tasks. It should be menu-based, allowing you the options of:
+
+* Search address book
+* Add entries
+* Remove / edit entries
+
+You will also need a *"display"* function to display a record or records when selected.
+
+### Search
+When the user searches for "Smith", the script should identify and display all "Smith" records. It is up to you whether this search is in Surname only, or in the entire record.
+### Add
+Input the data (Name, Surname, Email, Phone, etc).
+If it appears to be a duplicate, for bonus points offer to edit the existing record.
+Save the record into the data file when the user confirms.
+### Remove
+Enter search criteria, narrow it down to one, confirm, then remove that record.
+### Edit
+As remove, but use the existing record for default entries.
+
+For example, if you change the phone number, the session may look like this, if you only want to change John Smith's Phone Number:
+          Name [ John Smith ]
+          Phone [ 12345 ] 54321
+          Email [ joe@smith.org.uk ]
+Remove the old record, and add the new one. Alternatively, edit the existing record, though this may be more difficult.
+
+### Bonus Points
+Allow for cancel options (use "special" entries (^d, CR, ^c, etc))
+Add "Confirm" option.
+Offer interactive / non-interactive modes. (ie, a menu-based version and a command-line (CLI)-based option.
+Play with getopt for CLI version.
