@@ -1,145 +1,119 @@
 #!/bin/sh
 
-enter_user_address()
-{
-	echo "Enter user information"
-	echo "Name : \c"
-	read userName
-	name="$userName"
-	echo "Phone : \c"
-	read userPhone
-	phone="$userPhone"
-	echo "Email : \c"
-	read userEmail
-	email="$userEmail"
-}
-
-
 search_address() #seacrh address book
 {
-	enter_user_address $name $phone $email
-	if  [ -n "$name" ] && [ -n "$phone" ] && [ -n "$email" ]; then	
-		user="$name:" + "$phone:" + "$email:"; echo "$user"
+	echo "Enter user information"
+	echo " Name : \c"; read name
+	echo " Phone : \c"; read phone
+	echo " Email : \c"; read email
+	user="$name:$phone:$email"; echo "$user"
+	userExist=""
+	if  [ "$user" = "::" ]; then
+		echo "User informations can not be empty." 			
+	else 
+		echo "$user" > AddressBook.tmp
+		addressBookExist=`find -name AddressBook`
+		[ -z "$addressBookExist" ] && touch AddressBook.txt
+		username=`cut -d: -f1 AddressBook.tmp`
+		userphone=`cut -d: -f2 AddressBook.tmp`
+		useremail=`cut -d: -f3 AddressBook.tmp`
 
-		for i in "$name" "$phone" "$email"
+		j=1
+		for i in $username $userphone $useremail
 		do
-			userExist=userExist + `grep -i "$name" AddressBook.txt` + ":"
+			search=`grep -i "$i" AddressBook.txt | cut -d: -f${j}`
+			j=`expr $j + 1`
+			#echo "search = $search & \$i = $i & \$j = $j"; echo "$i"
+			if [ "$i" = "$search" ]; then
+				userExist=`grep -i "$i" AddressBook.txt`
+				echo "User found : \c"
+				echo "$userExist"
+				return 0
+			fi
 		done
-
-		if [ "$user"="$userExist" ]; then 
-			return `echo "$user"` 
-		else
-			echo "User $name does not exist in the AddressBook"
+		if [ -z "$userExist" ]; then 
+			echo "User $username does not exist in the AddressBook"
 			return 1
 		fi
-	else 
-		echo "User informations cant not be empty." 
-		search_address $name $phone $email
 	fi 
 }
 
-
 add_address() # add address in the book
 {
-	search_address $name $phone $email
+	search_address
 	resultSearchUser=$?
-	if [ resultSearchUser -eq 1 ]; then
-		echo "$name:$phone:$email:" >> AddressBook.txt
+	if [ "$resultSearchUser" -eq "1" ]; then
+		cat AddressBook.tmp >> AddressBook.txt
 		resultAddUser=$?
-		if [ "$resultAddUser" -eq "0" ]; then
-			echo "Adding user success"	
-			return 0
-		fi
-	else 
-		echo "User already exist, do you want to edit (y/n)? \c "
-		read inputString
-		if [ "$inputString" = "y" ] || [ "$inputString" = "Y" ]; then
-			enter_user_address
-			echo "Feed the new value of user informations"
-			echo "$name:$phone:$email:" >> AddressBook.txt
-		fi
+		[ "$resultAddUser" -eq "0" ] && echo "Adding user succeed" || echo "Adding user failed"
+		exit
 	fi
 }
 
-
 edit_address() # edit address in the book
 {
-	search_address $name $phone $email
+	search_address
 	resultSearchUser=$?
-	if [ resultSearchUser -eq 1 ]; then
-		echo "User does not exist"
-	else 
-		echo "Feed the new value of user informations"
-		enter_user_address $name $phone $email
+	if [ "$resultSearchUser" -eq "0" ]; then
+		oldUser=`cat AddressBook.tmp`
+		echo "Enter the new value"
+		echo " Name : \c"; read name
+		echo " Phone : \c"; read phone
+		echo " Email : \c"; read email
+		echo "$name:$phone:$email" >> AddressBook.txt
+		sed -i /${oldUser}/d AddressBook.txt
 	fi
 }
 
 remove_address() # remonve address in the book
 {
-	search_address $name $phone $email
+	search_address
 	resultSearchUser=$?
-	if [ resultSearchUser -ne 1 ]; then
-		echo "User $name does not exist in the AddressBook"
-		return 1
-	else 
-		if [ -n "$name" ]; then
-			sed -i '/${name}/d' AddressBook.txt
-		elif [ -n "$phone" ]; then
-			sed -i '/${phone}/d' AddressBook.txt
-		else 
-			sed -i '/${email}/d' AddressBook.txt
-		fi
-
+	if [ "$resultSearchUser" -eq "0" ]; then
+		removeUser=`cat AddressBook.tmp`
+		sed -i /${removeUser}/d AddressBook.txt
 		resultRemoveUser=$?
-		if [ "$resultRemoveUser" -eq "0" ]; then
-			echo "Removing user success"	
-			return 0
-		fi
+		[ "$resultRemoveUser" -eq "0" ] && echo "Removing succeed" || echo "Removing failed"
 	fi
 }
 
-display_address()
+address_book()
 {
-	search_address $name $phone $email
-	resultSearchUser=$?
-	if [ resultSearchUser -ne 1 ]; then
-		echo "User $name does not exist in the AddressBook"
-		return 1
+	if [ "$1" = "q" ] || [ "$1" = "Q" ]; then
+		exit
+	elif [ "$1" -ge "1" ] && [ "$1" -le "4" ]; then
+		case $1 in
+			1 )	search_address
+				break	;;
+			2 )	add_address
+				break	;;
+			3 )	edit_address
+				break	;;
+			4 )	remove_address
+				break	;;
+		esac
 	else 
-		echo " User found : $userExist"
-		return 0
+		echo "Enter a number between 1, 2, 3 and 4 (^c or q to quit) : \c"
+		return 1
 	fi
 }
 
 
-touch AddressBook.txt
-name=""; phone=""; email=""; userExist=""
+echo "	1 : Search address book"
+echo "	2 : Add user address in the boo"
+echo "	3 : Edit a user in the book"
+echo "	4 : Remove a user in the book"
+echo "Type a number to select an action (^c or q to quit): \c"
+read input
 
+address_book $input
+resultAddressBook=$?
 
-while :
-do 
-	echo "Type a numbr to select an action : "
-	echo "	1 : Search address book"
-	echo "	2 : Add user address in the boo"
-	echo "	3 : Edit a user in the book"
-	echo "	4 : Remove a user in the book"
-	echo " Your choice : \c"
-	read inputNumber
+if [ "$resultAddressBook" -eq "1" ]; then
+	read input
+	address_book $input
+fi
 
-	if [ "$inputNumber" -ge "1" ] && [ "$inputNumber" -le "4" ]; then
-		case $inputNumber in
-			1 )	search_address	;;
-			2 )	add_address	;;
-			3 )	edit_address	;;
-			4 )	remove_address	;;
-			* )	echo "Enter a number between 1, 2, 3 and 4"
-				break			;;
-		esac
-	fi
-
-	echo "Do you want to continue (y) or exit (n) ? \c"
-	read inputString
-	if [ "$inputString" = "y" ] || [ "$inputString" = "Y" ]; then 
-		exit
-	fi
-done
+echo "Address list"
+cat AddressBook.txt
+#rm AddressBook.tmp
